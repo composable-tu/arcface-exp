@@ -1,7 +1,22 @@
+# SPDX-License-Identifier: MulanPSL-2.0
+
+"""
+Copyright (c) 2026 composable-tu
+This project is licensed under Mulan PSL v2.
+You can use this software according to the terms and conditions of the Mulan PSL v2.
+You may obtain a copy of Mulan PSL v2 at:
+         http://license.coscl.org.cn/MulanPSL2
+THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+See the Mulan PSL v2 for more details.
+"""
+
 import os
+
+from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
-from PIL import Image
 
 
 class FaceDataset(Dataset):
@@ -11,7 +26,7 @@ class FaceDataset(Dataset):
         self.image_paths = []
         self.labels = []
         self._prepare_dataset()
-    
+
     def _prepare_dataset(self):
         # 遍历数据目录，收集所有图片路径和标签
         label = 0
@@ -24,21 +39,21 @@ class FaceDataset(Dataset):
                         self.image_paths.append(img_path)
                         self.labels.append(label)
                 label += 1
-    
+
     def __len__(self):
         return len(self.image_paths)
-    
+
     def __getitem__(self, idx):
         img_path = self.image_paths[idx]
         label = self.labels[idx]
-        
+
         # 加载图片
         image = Image.open(img_path).convert('RGB')
-        
+
         # 应用变换
         if self.transform:
             image = self.transform(image)
-        
+
         return image, label
 
 
@@ -54,22 +69,13 @@ def get_dataloader(data_dir, batch_size=32, num_workers=4, shuffle=True):
         DataLoader: 数据加载器
     """
     # 定义数据变换
-    transform = transforms.Compose([
-        transforms.Resize((112, 112)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-    ])
-    
+    transform = transforms.Compose([transforms.Resize((112, 112)), transforms.ToTensor(),
+                                    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])])
+
     # 创建数据集
     dataset = FaceDataset(data_dir, transform=transform)
-    
+
     # 创建数据加载器
-    dataloader = DataLoader(
-        dataset, 
-        batch_size=batch_size, 
-        shuffle=shuffle, 
-        num_workers=num_workers,
-        pin_memory=True
-    )
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, pin_memory=True)
 
     return dataloader, len(set(dataset.labels))
