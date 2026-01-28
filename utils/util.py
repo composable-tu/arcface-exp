@@ -24,13 +24,19 @@ def get_best_device():
         str: 最佳可用设备名称
     """
     if torch.cuda.is_available():
-        return 'cuda'
+        return 'cuda' # NVIDIA GPU
     elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-        return 'mps'
-    elif torch.xpu.is_available():
-        return 'xpu'
+        return 'mps' # Apple Silicon
+    elif hasattr(torch, 'xpu') and torch.xpu.is_available():
+        return 'xpu' # Intel GPU
+    elif hasattr(torch, 'musa') and torch.musa.is_available():
+        return 'musa' # 摩尔线程 MUSA
+    elif hasattr(torch, 'npu') and torch.npu.is_available():
+        return 'npu' # 华为 Ascend
+    elif hasattr(torch, 'xla') and torch.xla.is_available():
+        return 'xla' # Google TPU
     else:
-        return 'cpu'
+        return 'cpu' # CPU
 
 
 def get_next_checkpoint_dir(base_dir='checkpoints'):

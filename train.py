@@ -17,6 +17,7 @@ import os
 
 import torch.nn as nn
 from tqdm import tqdm
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from utils.dataset import get_dataloader
 from utils.model import create_model
@@ -61,8 +62,8 @@ def main():
     # 创建优化器
     optimizer = get_optimizer(model, lr=args.lr)
 
-    # 创建学习率调度器
-    scheduler = get_scheduler(optimizer, step_size=10, gamma=0.1)
+    # 创建学习率调度器 - 使用监控损失的调度器
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5, min_lr=1e-6)
 
     # 定义损失函数
     criterion = nn.CrossEntropyLoss()
@@ -79,21 +80,33 @@ def main():
                    f'Loss: {loss:.4f}, Accuracy: {accuracy:.2f}%, Precision: {precision * 100:.2f}%, '
                    f'Recall: {recall * 100:.2f}%, F1: {f1 * 100:.2f}%')
 
+    # 计算总的训练轮数
+    total_epochs = args.epochs
+    if args.resume_from:
+        # 如果是从检查点恢复，确保训练完整个周期（比如总共训练50个epoch）
+        # 但不要超过设定的总轮数
+        remaining_epochs = total_epochs - start_epoch
+        tqdm.write(f'Total epochs: {total_epochs}, Already completed: {start_epoch}, Remaining: {remaining_epochs}')
+    
     # 开始训练
     tqdm.write(f'Starting training on {args.device}...')
-    for epoch in range(start_epoch, args.epochs):
-        tqdm.write(f'\nEpoch {epoch + 1}/{args.epochs}')
+    for epoch in range(start_epoch, total_epochs):
+        tqdm.write(f'\nEpoch {epoch + 1}/{total_epochs}')
         tqdm.write('-' * 50)
 
         # 训练一个epoch
         loss, accuracy, precision, recall, f1 = trainer.train_epoch(dataloader)
 
+        # 输出当前学习率
+        current_lr = optimizer.param_groups[0]['lr']
+        tqdm.write(f'Current learning rate: {current_lr:.6f}')
+
         # 输出指标
         tqdm.write(
             f'Loss: {loss:.4f}, Accuracy: {accuracy:.2f}%, Precision: {precision * 100:.2f}%, Recall: {recall * 100:.2f}%, F1: {f1 * 100:.2f}%')
 
-        # 调整学习率
-        scheduler.step()
+        # 使用ReduceLROnPlateau调度器，根据损失调整学习率
+        scheduler.step(loss)
 
         # 保存模型
         trainer.save_model(epoch + 1, loss, accuracy, precision, recall, f1)

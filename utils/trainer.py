@@ -149,24 +149,14 @@ class Trainer:
                     'precision': precision, 'recall': recall, 'f1': f1}, last_save_path)
         self.logger.info(f'Latest model saved to {last_save_path}')
 
-        # 如果当前模型的F1分数更高，则保存为最佳模型
-        if f1 > self.best_f1:
-            self.best_f1 = f1
+        # 如果 ArcFace 损失更低，则更新最佳模型
+        if loss < self.best_loss:
             self.best_loss = loss
             best_save_path = os.path.join(self.save_dir, f'best.pth')
             torch.save({'epoch': epoch, 'model_state_dict': self.model.state_dict(),
                         'optimizer_state_dict': self.optimizer.state_dict(), 'loss': loss, 'accuracy': accuracy,
                         'precision': precision, 'recall': recall, 'f1': f1}, best_save_path)
-            self.logger.info(f'Best model saved to {best_save_path} (F1: {f1:.4f}, Accuracy: {accuracy:.2f}%)')
-        elif f1 == self.best_f1 and loss < self.best_loss:
-            # 如果F1分数相同但损失更低，也更新最佳模型
-            self.best_loss = loss
-            best_save_path = os.path.join(self.save_dir, f'best.pth')
-            torch.save({'epoch': epoch, 'model_state_dict': self.model.state_dict(),
-                        'optimizer_state_dict': self.optimizer.state_dict(), 'loss': loss, 'accuracy': accuracy,
-                        'precision': precision, 'recall': recall, 'f1': f1}, best_save_path)
-            self.logger.info(
-                f'Best model updated to {best_save_path} (F1: {f1:.4f}, Accuracy: {accuracy:.2f}%, Loss: {loss:.4f})')
+            self.logger.info(f'Best model saved to {best_save_path} (Loss: {loss:.4f}, Accuracy: {accuracy:.2f}%)')
 
     def load_model(self, model_path):
         """
@@ -174,7 +164,7 @@ class Trainer:
         Args:
             model_path: 模型路径
         """
-        checkpoint = torch.load(model_path, map_location=self.device)
+        checkpoint = torch.load(model_path, map_location=self.device, weights_only=False)
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         epoch = checkpoint.get('epoch', 0)
