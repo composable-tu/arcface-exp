@@ -178,3 +178,5 @@ cython_debug/
 !/datasets/.gitkeep
 
 /checkpoints**/
+kernel.errors.txt
+/model/
