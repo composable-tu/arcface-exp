@@ -17,6 +17,8 @@ import os
 import torch
 from openvino import convert_model
 from openvino import save_model
+from openvino._pyopenvino.preprocess import PrePostProcessor, ColorFormat
+from openvino import Type, Layout
 
 from utils.model import create_model
 
@@ -55,7 +57,24 @@ input_shape = [1, 3, 112, 112]
 os.makedirs(output_dir, exist_ok=True)
 
 # 转换 TorchScript 模型到 OpenVINO IR
-ov_model = convert_model('model/torchscript/model.pt')
+ov_model = convert_model('model/torchscript/model.pt', input=input_shape)
+
+ppp = PrePostProcessor(ov_model)
+
+ppp.input().tensor() \
+    .set_element_type(Type.u8) \
+    .set_layout(Layout('NHWC')) \
+    .set_color_format(ColorFormat.RGB)
+
+ppp.input().preprocess() \
+    .convert_element_type(Type.f32) \
+    .convert_color(ColorFormat.RGB) \
+    .mean([127.5, 127.5, 127.5]) \
+    .scale([128.0, 128.0, 128.0])
+
+ppp.input().model().set_layout(Layout('NCHW'))
+
+ov_model = ppp.build()
 
 # 保存 OpenVINO IR 模型
 output_path = os.path.join(output_dir, 'model.xml')
