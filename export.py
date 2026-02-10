@@ -15,10 +15,10 @@ See the Mulan PSL v2 for more details.
 import os
 
 import torch
+from openvino import Type, Layout
 from openvino import convert_model
 from openvino import save_model
 from openvino._pyopenvino.preprocess import PrePostProcessor, ColorFormat
-from openvino import Type, Layout
 
 from utils.model import create_model
 
@@ -61,16 +61,10 @@ ov_model = convert_model('model/torchscript/model.pt', input=input_shape)
 
 ppp = PrePostProcessor(ov_model)
 
-ppp.input().tensor() \
-    .set_element_type(Type.u8) \
-    .set_layout(Layout('NHWC')) \
-    .set_color_format(ColorFormat.RGB)
+ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout('NHWC')).set_color_format(ColorFormat.RGB)
 
-ppp.input().preprocess() \
-    .convert_element_type(Type.f32) \
-    .convert_color(ColorFormat.RGB) \
-    .mean([127.5, 127.5, 127.5]) \
-    .scale([128.0, 128.0, 128.0])
+ppp.input().preprocess().convert_element_type(Type.f32).convert_color(ColorFormat.RGB).mean(
+    [127.5, 127.5, 127.5]).scale([128.0, 128.0, 128.0])
 
 ppp.input().model().set_layout(Layout('NCHW'))
 
