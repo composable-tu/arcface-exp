@@ -27,16 +27,16 @@ from utils.util import get_best_device, get_next_checkpoint_dir
 
 def main():
     # 解析命令行参数
-    parser = argparse.ArgumentParser(description='Face Recognition Training')
-    parser.add_argument('--data_dir', type=str, default='datasets/lfw-deepfunneled', help='Path to dataset directory')
-    parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training')
-    parser.add_argument('--epochs', type=int, default=50, help='Number of training epochs')
-    parser.add_argument('--lr', type=float, default=0.01, help='Initial learning rate')
-    parser.add_argument('--num_features', type=int, default=512, help='Embedding feature size')
-    parser.add_argument('--num_workers', type=int, default=4, help='Number of workers for data loading')
-    parser.add_argument('--save_dir', type=str, default='checkpoints', help='Directory to save model checkpoints')
-    parser.add_argument('--device', type=str, default=get_best_device(), help='Device to use for training')
-    parser.add_argument('--resume_from', type=str, default=None, help='Path to checkpoint to resume training from')
+    parser = argparse.ArgumentParser(description='人脸识别训练')
+    parser.add_argument('--data_dir', type=str, default='datasets/lfw-deepfunneled', help='数据集目录路径')
+    parser.add_argument('--batch_size', type=int, default=32, help='训练批次大小')
+    parser.add_argument('--epochs', type=int, default=50, help='训练轮数')
+    parser.add_argument('--lr', type=float, default=0.01, help='初始学习率')
+    parser.add_argument('--num_features', type=int, default=512, help='嵌入特征维度')
+    parser.add_argument('--num_workers', type=int, default=4, help='数据加载工作线程数')
+    parser.add_argument('--save_dir', type=str, default='checkpoints', help='模型检查点保存目录')
+    parser.add_argument('--device', type=str, default=get_best_device(), help='训练使用的硬件')
+    parser.add_argument('--resume_from', type=str, default=None, help='从中断处恢复训练的检查点路径')
 
     args = parser.parse_args()
 
