@@ -37,11 +37,10 @@ class FaceRecognitionModel(nn.Module):
         features = torch.nn.functional.normalize(features, p=2, dim=1)
 
         # 归一化权重
-        with torch.no_grad():
-            self.fc.weight.div_(torch.norm(self.fc.weight, dim=1, keepdim=True))
+        weight = torch.nn.functional.normalize(self.fc.weight, p=2, dim=1)
 
         # 计算logits
-        logits = self.fc(features)
+        logits = torch.nn.functional.linear(features, weight)
 
         # 如果提供了标签，计算ArcFace损失
         if labels is not None:
