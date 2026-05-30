@@ -31,12 +31,13 @@ def main():
     parser.add_argument('--data_dir', type=str, default='datasets/lfw-deepfunneled', help='数据集目录路径')
     parser.add_argument('--batch_size', type=int, default=32, help='训练批次大小')
     parser.add_argument('--epochs', type=int, default=50, help='训练轮数')
-    parser.add_argument('--lr', type=float, default=0.01, help='初始学习率')
+    parser.add_argument('--lr', type=float, default=0.1, help='初始学习率')
     parser.add_argument('--num_features', type=int, default=512, help='嵌入特征维度')
     parser.add_argument('--num_workers', type=int, default=4, help='数据加载工作线程数')
     parser.add_argument('--save_dir', type=str, default='checkpoints', help='模型检查点保存目录')
     parser.add_argument('--device', type=str, default=get_best_device(), help='训练使用的硬件')
     parser.add_argument('--resume_from', type=str, default=None, help='从中断处恢复训练的检查点路径')
+    parser.add_argument('--warmup_epochs', type=int, default=5, help='Warmup轮数')
 
     args = parser.parse_args()
 
@@ -63,7 +64,7 @@ def main():
     optimizer = get_optimizer(model, lr=args.lr)
 
     # 创建学习率调度器 - 使用监控损失的调度器
-    scheduler = get_scheduler(optimizer, epochs=args.epochs, warmup_epochs=5)
+    scheduler = get_scheduler(optimizer, epochs=args.epochs, warmup_epochs=args.warmup_epochs)
 
     # 定义损失函数
     criterion = nn.CrossEntropyLoss()
@@ -79,6 +80,8 @@ def main():
         tqdm.write(f'Resuming training from epoch {start_epoch + 1}. Previous metrics - '
                    f'Loss: {loss:.4f}, Accuracy: {accuracy:.2f}%, Precision: {precision * 100:.2f}%, '
                    f'Recall: {recall * 100:.2f}%, F1: {f1 * 100:.2f}%')
+        for _ in range(start_epoch):
+            scheduler.step()
 
     # 计算总的训练轮数
     total_epochs = args.epochs
@@ -94,19 +97,19 @@ def main():
         tqdm.write(f'\nEpoch {epoch + 1}/{total_epochs}')
         tqdm.write('-' * 50)
 
-        # 训练一个epoch
-        loss, accuracy, precision, recall, f1 = trainer.train_epoch(dataloader)
-
         # 输出当前学习率
         current_lr = optimizer.param_groups[0]['lr']
         tqdm.write(f'Current learning rate: {current_lr:.6f}')
+
+        # 训练一个epoch
+        loss, accuracy, precision, recall, f1 = trainer.train_epoch(dataloader)
 
         # 输出指标
         tqdm.write(
             f'Loss: {loss:.4f}, Accuracy: {accuracy:.2f}%, Precision: {precision * 100:.2f}%, Recall: {recall * 100:.2f}%, F1: {f1 * 100:.2f}%')
 
         # 使用 Warmup + Cosine Annealing 调度器，根据损失调整学习率
-        scheduler.step(loss)
+        scheduler.step()
 
         # 保存模型
         trainer.save_model(epoch + 1, loss, accuracy, precision, recall, f1)
