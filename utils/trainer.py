@@ -13,12 +13,13 @@ See the Mulan PSL v2 for more details.
 """
 
 import logging
+import math
 import os
 import sys
 
 import torch
 from sklearn.metrics import precision_score, recall_score, f1_score
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import StepLR, LambdaLR
 from tqdm import tqdm
 
 
@@ -192,16 +193,29 @@ def get_optimizer(model, lr=0.01, weight_decay=5e-4):
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
     return optimizer
 
-
-def get_scheduler(optimizer, step_size=10, gamma=0.1):
+def get_scheduler(optimizer, epochs=50, warmup_epochs=5):
     """
     获取学习率调度器
+
     Args:
         optimizer: 优化器
-        step_size: 调整步长
-        gamma: 衰减因子
+        epochs: 总训练轮数
+        warmup_epochs: warmup轮数
     Returns:
         torch.optim.lr_scheduler._LRScheduler: 学习率调度器
     """
-    scheduler = StepLR(optimizer, step_size=step_size, gamma=gamma)
+    # Warmup + Cosine Annealing策略
+    def lr_lambda(epoch):
+        if epoch < warmup_epochs:
+            # Warmup阶段：线性增长到初始学习率
+            return (epoch + 1) / warmup_epochs
+        else:
+            # Cosine Annealing阶段：从初始学习率逐渐衰减到最小值
+            progress = (epoch - warmup_epochs) / (epochs - warmup_epochs)
+            return 0.5 * (1 + math.cos(math.pi * progress))
+
+    scheduler = LambdaLR(optimizer, lr_lambda=lr_lambda)
+
     return scheduler
+
+

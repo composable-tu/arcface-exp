@@ -63,7 +63,7 @@ def main():
     optimizer = get_optimizer(model, lr=args.lr)
 
     # 创建学习率调度器 - 使用监控损失的调度器
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5, min_lr=1e-6)
+    scheduler = get_scheduler(optimizer, epochs=args.epochs, warmup_epochs=5)
 
     # 定义损失函数
     criterion = nn.CrossEntropyLoss()
@@ -105,7 +105,7 @@ def main():
         tqdm.write(
             f'Loss: {loss:.4f}, Accuracy: {accuracy:.2f}%, Precision: {precision * 100:.2f}%, Recall: {recall * 100:.2f}%, F1: {f1 * 100:.2f}%')
 
-        # 使用ReduceLROnPlateau调度器，根据损失调整学习率
+        # 使用 Warmup + Cosine Annealing 调度器，根据损失调整学习率
         scheduler.step(loss)
 
         # 保存模型

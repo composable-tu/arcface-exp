@@ -180,3 +180,4 @@ cython_debug/
 /checkpoints**/
 kernel.errors.txt
 /model/
+.DS_Store
