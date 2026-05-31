@@ -37,7 +37,7 @@ def main():
     parser.add_argument('--save_dir', type=str, default='checkpoints', help='模型检查点保存目录')
     parser.add_argument('--device', type=str, default=get_best_device(), help='训练使用的硬件')
     parser.add_argument('--resume_from', type=str, default=None, help='从中断处恢复训练的检查点路径')
-    parser.add_argument('--warmup_epochs', type=int, default=5, help='Warmup轮数')
+    parser.add_argument('--warmup_epochs', type=int, default=10, help='Warmup轮数')
 
     args = parser.parse_args()
 
